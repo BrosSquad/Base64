@@ -5,7 +5,7 @@ using Xunit;
 
 namespace Base64.Tests
 {
-    public class Base64EncoderTest
+    public abstract class AbstractBase64EncoderTest : Base64Tests
     {
         [Fact]
         public void Should_Encode_Base64_In_Original_Mode()
@@ -14,9 +14,8 @@ namespace Base64.Tests
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
 
             provider.GetNonZeroBytes(bytes);
-            var base64 = new Base64Encoder();
 
-            string b64 = base64.Encode(bytes, Variant.Original);
+            string b64 = _encoder.Encode(bytes, Variant.Original);
 
             b64.Should()
                 .NotBeEmpty()
@@ -31,9 +30,8 @@ namespace Base64.Tests
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
 
             provider.GetNonZeroBytes(bytes);
-            var base64 = new Base64Encoder();
 
-            string b64 = base64.Encode(bytes, Variant.UrlSafe);
+            string b64 = _encoder.Encode(bytes, Variant.UrlSafe);
 
             b64.Should()
                 .NotBeEmpty()
@@ -52,9 +50,8 @@ namespace Base64.Tests
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
 
             provider.GetNonZeroBytes(bytes);
-            var base64 = new Base64Encoder();
 
-            string b64 = base64.Encode(bytes, Variant.OriginalNoPadding);
+            string b64 = _encoder.Encode(bytes, Variant.OriginalNoPadding);
 
             b64.Should()
                 .NotBeEmpty()
@@ -69,9 +66,8 @@ namespace Base64.Tests
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
 
             provider.GetNonZeroBytes(bytes);
-            var base64 = new Base64Encoder();
 
-            string b64 = base64.Encode(bytes, Variant.UrlSafeNoPadding);
+            string b64 = _encoder.Encode(bytes, Variant.UrlSafeNoPadding);
 
             b64.Should()
                 .NotBeEmpty()
@@ -87,14 +83,18 @@ namespace Base64.Tests
         [Fact]
         public void Should_Throw_OverflowException_When_OutputBuffer_Is_Not_Large_Enough()
         {
-            byte[] bytes = new byte[64];
-            RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
+            Assert.Throws<OverflowException>(() =>
+            {
+                byte[] bytes = new byte[64];
+                RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
 
-            provider.GetNonZeroBytes(bytes);
-            var base64 = new Base64Encoder();
+                provider.GetNonZeroBytes(bytes);
 
-            char[] output = new char[10];
-            Assert.Throws<OverflowException>(() => base64.Encode(output, bytes, Variant.Original));
+                Span<byte> output = new byte[10];
+                var reference = new ReadOnlySpan<byte>(bytes);
+
+                _encoder.Encode(ref output, ref reference, Variant.Original);
+            });
         }
     }
 }

@@ -1,111 +1,115 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
 namespace Base64
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class Base64Decoder
+    public class Base64Decoder : Base64, IDecoder
     {
-        /// <summary>
-        /// Calculates number of bytes that will be used in byte buffer when decoding
-        /// </summary>
-        /// <param name="base64">Base64 encoded string</param>
-        /// <param name="variant">Variant of base64 used in encoding</param>
-        /// <returns>Number of bytes in original buffer</returns>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public int EncodedLengthToBytes(ReadOnlySpan<char> base64)
+        private static byte[] _decodeTable =
         {
-            int count = 0;
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 62, 128, 128, 128, 63, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 128, 128, 128, 0, 128, 128, 128, 0, 1,
+            2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 128, 128, 128, 128,
+            128, 128, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,
+            50, 51, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128,
+        };
 
-            foreach (var c in base64[^2..])
-            {
-                if (c == '=') count++;
-            }
 
-            return base64.Length * 3 / 4 - count;
-        }
+        private static byte[] _decodeTableUrlSafe =
+        {
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 62, 128, 128, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 128, 128, 128, 0, 128, 128, 128, 0, 1,
+            2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 128, 128, 128, 128,
+            63, 128, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50,
+            51, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128, 128,
+            128, 128, 128, 128, 128, 128, 128,
+        };
 
-
-        /// <summary>
-        /// Decodes base64 string into buffer (byte array) with variants
-        /// 1. Standard with padding
-        /// 2. Standard with no padding
-        /// 3. UrlSafe with padding
-        /// 4. UrlSafe with no padding
-        /// </summary>
-        /// <param name="base64">Base64 Encoded string</param>
-        /// <param name="variant">Variant used in encoding</param>
-        /// <returns>Return Memory&gt;byte&lt; with underlying byte buffer or null on error</returns>
-        public Memory<byte> Decode(ReadOnlySpan<char> base64, Variant variant)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public Memory<byte> Decode(ReadOnlySpan<byte> base64, Variant variant)
         {
             byte[] data = new byte[EncodedLengthToBytes(base64)];
-            int accLen = 0, b64Pos = 0, binPos = 0;
-            ulong acc = 0;
-            bool isUrlSafe = ((int) variant & (int) Mask.UrlSafe) > 0;
-
-
-            while (b64Pos < base64.Length)
-            {
-                char c = base64[b64Pos];
-                byte d = Base64CharToByte(c, isUrlSafe);
-
-                if (d == 0xFF)
-                {
-                    break;
-                }
-
-                acc = (acc << 6) + d;
-                accLen += 6;
-                if (accLen >= 8)
-                {
-                    accLen -= 8;
-                    data[binPos++] = (byte) ((acc >> accLen) & 0xFF);
-                }
-
-                b64Pos++;
-            }
-
-            // Check for padding
-            if (((int) variant & (int) Mask.NoPadding) == 0)
-            {
-                int paddingLen = accLen / 2;
-
-                while (paddingLen > 0)
-                {
-                    char c = base64[b64Pos];
-
-                    if (c == '=')
-                    {
-                        paddingLen--;
-                    }
-
-                    b64Pos++;
-                }
-            }
-            else if (b64Pos != base64.Length)
-            {
-                return null;
-            }
-
+            Decode(data, base64, variant);
             return data;
         }
-        
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte Base64CharToByte(char c, bool urlSafe)
+        public unsafe void Decode(Span<byte> dst, ReadOnlySpan<byte> base64, Variant variant)
         {
-            int y = urlSafe ? '-' : '+';
-            int y1 = urlSafe ? '_' : '/';
-            int x =
-                (((int) c >= (int) 'A' ? 0xFF : 0) & ((int) c <= (int) 'Z' ? 0xFF : 0) & (c - 'A')) |
-                (((int) c >= (int) 'a' ? 0xFF : 0) & ((int) c <= (int) 'z' ? 0xFF : 0) & (c - ('a' - 26))) |
-                (((int) c >= (int) '0' ? 0xFF : 0) & ((int) c <= (int) '9' ? 0xFF : 0) & (c - ('0' - 52))) |
-                (((int) c == y ? 0xFF : 0) & 62) |
-                (((int) c == y1 ? 0xFF : 0) & 63);
-        
-            return (byte) (x | ((x == 0 ? 0xFF : 0) & (((int) c == (int) 'A' ? 0xFF : 0) ^ 0xFF)));
+            int i, count;
+            bool isUrlSafe = ((int) variant & (int) Mask.UrlSafe) > 0;
+            byte* block = stackalloc byte[4];
+
+            fixed (byte* destBytes = dst)
+            fixed (byte* table = isUrlSafe ? _decodeTableUrlSafe : _decodeTable)
+            {
+                byte* destPointer = destBytes;
+
+                for (i = 0, count = 0; i < base64.Length; i++)
+                {
+                    byte tmp = table[base64[i]];
+                    if (tmp == 0x80)
+                        continue;
+                    block[count] = tmp;
+                    count++;
+                    if (count == 4)
+                    {
+                        *destPointer++ = (byte) ((block[0] << 2) | (block[1] >> 4));
+                        *destPointer++ = (byte) ((block[1] << 4) | (block[2] >> 2));
+                        *destPointer++ = (byte) ((block[2] << 6) | block[3]);
+                        count = 0;
+                    }
+                }
+
+                if (((int) variant & (int) Mask.NoPadding) != 0)
+                {
+                    *destPointer++ = (byte) ((block[0] << 2) | (block[1] >> 4));
+                    *destPointer++ = (byte) ((block[1] << 4) | (block[2] >> 2));
+                    *destPointer = (byte) ((block[2] << 6) | block[3]);
+                }
+            }
+
+            //
+            // for (i = 0; i < len; i++)
+            // {
+            //     tmp = dtable[src[i]];
+            //     if (tmp == 0x80)
+            //         continue;
+            //     [count] =
+            //     src[i];
+            //     block[count] = tmp;
+            //     count++;
+            //     if (count == 4)
+            //     {
+            //         *pos++ = (block[0] << 2) | (block[1] >> 4);
+            //         *pos++ = (block[1] << 4) | (block[2] >> 2);
+            //         *pos++ = (block[2] << 6) | block[3];
+            //         count = 0;
+            //     }
+            // }
+
+            // if (pos > out)
+            // {
+            //     if (in[
+            //     2] == '=')
+            //     pos -= 2;
+            //     else if (in[
+            //     3] == '=')
+            //     pos--;
+            // }
         }
     }
 }

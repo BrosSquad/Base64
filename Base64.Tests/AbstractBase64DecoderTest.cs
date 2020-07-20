@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Security.Cryptography;
+using System.Text;
 using FluentAssertions;
-using FluentAssertions.Common;
 using Xunit;
 
 namespace Base64.Tests
 {
-    public class Base64DecoderTest
+    public abstract class AbstractBase64DecoderTest : Base64Tests
     {
         [Fact]
         public void Should_Decode_Original_Mode_To_String()
@@ -16,9 +16,8 @@ namespace Base64.Tests
             provider.GetNonZeroBytes(bytes);
             string b64 = Convert.ToBase64String(bytes);
 
-            var base64 = new Base64Decoder();
 
-            byte[] buffer = base64.Decode(b64, Variant.Original)
+            byte[] buffer = _decoder.Decode(Encoding.ASCII.GetBytes(b64), Variant.Original)
                 .ToArray();
 
             buffer.Should()
@@ -33,11 +32,10 @@ namespace Base64.Tests
             byte[] bytes = new byte[64];
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
             provider.GetNonZeroBytes(bytes);
-            string b64 = new Base64Encoder().Encode(bytes, Variant.OriginalNoPadding);
+            string b64 = _encoder.Encode(bytes, Variant.OriginalNoPadding);
 
-            var base64 = new Base64Decoder();
 
-            byte[] buffer = base64.Decode(b64, Variant.OriginalNoPadding)
+            byte[] buffer = _decoder.Decode(Encoding.ASCII.GetBytes(b64), Variant.OriginalNoPadding)
                 .ToArray();
 
             buffer.Should()
@@ -52,9 +50,9 @@ namespace Base64.Tests
             byte[] bytes = new byte[64];
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
             provider.GetNonZeroBytes(bytes);
-            string b64 = new Base64Encoder().Encode(bytes, Variant.UrlSafe);
+            string b64 = _encoder.Encode(bytes, Variant.UrlSafe);
 
-            var outputMemory = new Base64Decoder().Decode(b64, Variant.UrlSafe);
+            var outputMemory = _decoder.Decode(Encoding.ASCII.GetBytes(b64), Variant.UrlSafe);
 
             var outputBuffer = outputMemory.ToArray();
 
@@ -71,11 +69,10 @@ namespace Base64.Tests
             byte[] bytes = new byte[64];
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
             provider.GetNonZeroBytes(bytes);
-            string b64 = new Base64Encoder().Encode(bytes, Variant.UrlSafeNoPadding);
+            string b64 = _encoder.Encode(bytes, Variant.UrlSafeNoPadding);
 
-            var base64 = new Base64Decoder();
 
-            byte[] buffer = base64.Decode(b64, Variant.UrlSafeNoPadding)
+            byte[] buffer = _decoder.Decode(Encoding.ASCII.GetBytes(b64), Variant.UrlSafeNoPadding)
                 .ToArray();
 
             buffer.Should()
@@ -88,8 +85,6 @@ namespace Base64.Tests
         public void Should_Give_Right_Number_Of_Bytes_For_Encoded_String()
         {
             RNGCryptoServiceProvider provider = new RNGCryptoServiceProvider();
-            Base64Encoder encoder = new Base64Encoder();
-            Base64Decoder decoder = new Base64Decoder();
 
             Random random = new Random();
             
@@ -106,9 +101,9 @@ namespace Base64.Tests
                     _ => Variant.UrlSafeNoPadding,
                 };
 
-                string base64 = encoder.Encode(bytes, variant);
+                string base64 = _encoder.Encode(bytes, variant);
 
-                decoder.EncodedLengthToBytes(base64).Should()
+                _decoder.EncodedLengthToBytes(Encoding.ASCII.GetBytes(base64)).Should()
                     .Be(length);
 
                 Array.Clear(bytes, 0, bytes.Length);

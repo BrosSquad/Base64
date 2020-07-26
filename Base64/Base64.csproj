@@ -3,6 +3,12 @@
     <PropertyGroup>
         <TargetFramework>netstandard2.1</TargetFramework>
         <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <PackageId>Base64Enc</PackageId>
+        <Version>1.0.1</Version>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Authors>Dusan Malusev</Authors>
+        <PackageDescription>Efficient Base64(URL) encoder and decoder with constant time encoding and decoding</PackageDescription>
+        <RepositoryUrl>https://github.com/malusev998/Base64</RepositoryUrl>
     </PropertyGroup>
 
     <ItemGroup>

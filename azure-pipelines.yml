@@ -1,0 +1,62 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+  tags:
+    include:
+    - v*
+  branches:
+    include:
+    - master
+    - dev
+
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-latest'
+    mac:
+      imageName: 'macos-latest'
+    windows:
+      imageName: 'windows-latest'
+
+pool:
+  vmImage: $(imageName)
+  NUGET_PACKAGES: $(Pipeline.Workspace)/.nuget/packages
+
+variables:
+  buildConfiguration: 'Release'
+  tagVersion:  ${{ replace(variables['Build.SourceBranch'], 'refs/tags/v', '') }} 
+steps:
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: restore
+    displayName: 'dotnet restore'
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: build
+      projects: '**/*.csproj'
+      arguments: '--configuration $(buildConfiguration)'
+    displayName: 'dotnet build $(buildConfiguration)'
+  - task: DotNetCoreCLI@2
+    inputs:
+      command: test
+      projects: '**/*Tests/*.csproj'
+      arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
+    displayName: 'dotnet test $(buildConfiguration)'
+  - task: DotNetCoreCLI@2
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      command: pack
+      projects: '**/*.csproj'
+      arguments: '-o ./bin -c $(buildConfiguration)'
+    displayName: 'Packing Base64'
+  - task: DotNetCoreCLI@2
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      command: push
+      arguments: './bin/Base64Enc.$(tagVersion).nupkg  --source https://api.nuget.org/v3/index.json --api-key $(nuget-api-key)'
+    displayName: 'Publishing to NuGet'
+
+

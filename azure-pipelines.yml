@@ -45,12 +45,12 @@ steps:
       projects: '**/*Tests/*.csproj'
       arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
     displayName: 'dotnet test $(buildConfiguration)'
-  # - task: DotNetCoreCLI@2
-  #   condition: ${{ startsWith(variables['Build.SourceBranch'], 'refs/tags/')) }}
-  #   inputs:
-  #     command: pack
-  #     projects: '**/*.csproj'
-  #     arguments: '-o ./bin -c $(buildConfiguration)'
+  - task: DotNetCoreCLI@2
+    condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      command: pack
+      projects: '**/*.csproj'
+      arguments: '-o ./bin -c $(buildConfiguration)'
   #   displayName: 'Packing Base64'
   # - task: DotNetCoreCLI@2
   #   condition: ${{ startsWith(variables['Build.SourceBranch'], 'refs/tags/')) }}

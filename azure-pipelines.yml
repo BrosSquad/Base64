@@ -4,7 +4,13 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
+  tags:
+    include:
+    - v*
+  branches:
+    include:
+    - master
+    - dev
 
 strategy:
   matrix:
@@ -21,6 +27,7 @@ pool:
 
 variables:
   buildConfiguration: 'Release'
+  tagVersion:  ${{ replace(variables['Build.SourceBranch'], 'refs/tags/v', '') }} 
 steps:
   - task: DotNetCoreCLI@2
     inputs:
@@ -38,4 +45,18 @@ steps:
       projects: '**/*Tests/*.csproj'
       arguments: '--configuration $(buildConfiguration) --collect "Code coverage"'
     displayName: 'dotnet test $(buildConfiguration)'
+  - task: DotNetCoreCLI@2
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      command: pack
+      projects: '**/*.csproj'
+      arguments: '-o ./bin -c $(buildConfiguration)'
+    displayName: 'Packing Base64'
+  - task: DotNetCoreCLI@2
+    condition: startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+    inputs:
+      command: push
+      arguments: './bin/Base64Enc.$(tagVersion).nupkg  --source https://api.nuget.org/v3/index.json --api-key $(nuget-api-key)'
+    displayName: 'Publishing to NuGet'
+
 
